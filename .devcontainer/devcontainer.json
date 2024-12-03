@@ -1,0 +1,57 @@
+{
+    "name": "Ubuntu",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
+    "runArgs": [
+        "--gpus",
+        "all"
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "installOhMyZshConfig": true,
+            "upgradePackages": true,
+            "username": "devcontainer",
+            "userUid": "1001",
+            "userGid": "automatic"
+        },
+        "ghcr.io/devcontainers/features/nvidia-cuda:1": {
+            "installCudnn": true,
+            "installCudnnDev": true,
+            "installToolkit": true,
+            "cudaVersion": "11.8",
+            "cudnnVersion": "8.6.0.163"
+        }
+    },
+    "remoteEnv": {
+        "PATH": "${containerEnv:PATH}:/usr/local/cuda/bin"
+    },
+    "customizations": {
+        "vscode": {
+        "settings": {
+"python.defaultInterpreterPath": "opt/conda/envs/dev_env/bin/python",
+        },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.debugpy",
+                "ms-python.vscode-pylance",
+                "ms-python.isort",
+                "ms-toolsai.jupyter",
+                "ms-toolsai.jupyter-keymap",
+                "ms-toolsai.vscode-jupyter-cell-tags",
+                "ms-toolsai.jupyter-renderers",
+                "ms-toolsai.vscode-jupyter-slideshow",
+                "ms-toolsai.tensorboard",
+                "charliermarsh.ruff",
+                "donjayamanne.python-extension-pack",
+                "GitHub.copilot"
+            ]
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/scripts/post_create.sh",
+    "postStartCommand": "bash .devcontainer/scripts/post_start.sh"
+}
