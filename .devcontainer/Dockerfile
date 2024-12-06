@@ -19,8 +19,8 @@ RUN conda install -n base -c conda-forge mamba -y
 # Copy environment.yml
 COPY environment.yml /tmp/environment.yml
 
-# Use Mamba to create the environment
-RUN mamba env create -f /tmp/environment.yml \
+# Use Mamba to create the environment with cache mount
+RUN --mount=type=cache,target=/opt/conda/pkgs mamba env create -f /tmp/environment.yml \
     && conda clean -a -y
 
 # Set environment variables
@@ -30,8 +30,8 @@ ENV PATH=/opt/conda/envs/dev_env/bin:$PATH
 # Activate the environment for subsequent RUN commands
 SHELL ["conda", "run", "-n", "dev_env", "/bin/bash", "-c"]
 
-# Download NLTK data
-RUN python -m nltk.downloader all
+# Download NLTK data with cache mount
+RUN --mount=type=cache,target=/root/nltk_data python -m nltk.downloader all
 
 # Set the default command
 CMD ["bash"]

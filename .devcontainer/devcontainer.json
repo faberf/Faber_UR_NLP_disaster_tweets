@@ -14,10 +14,7 @@
             "configureZshAsDefaultShell": true,
             "installOhMyZsh": true,
             "installOhMyZshConfig": true,
-            "upgradePackages": true,
-            "username": "devcontainer",
-            "userUid": "1001",
-            "userGid": "automatic"
+            "upgradePackages": true
         },
         "ghcr.io/devcontainers/features/nvidia-cuda:1": {
             "installCudnn": true,
@@ -32,9 +29,9 @@
     },
     "customizations": {
         "vscode": {
-        "settings": {
-"python.defaultInterpreterPath": "opt/conda/envs/dev_env/bin/python",
-        },
+            "settings": {
+                "python.defaultInterpreterPath": "opt/conda/envs/dev_env/bin/python",
+            },
             "extensions": [
                 "ms-python.python",
                 "ms-python.debugpy",
@@ -48,10 +45,14 @@
                 "ms-toolsai.tensorboard",
                 "charliermarsh.ruff",
                 "donjayamanne.python-extension-pack",
-                "GitHub.copilot"
+                "GitHub.copilot",
+                "mechatroner.rainbow-csv"
             ]
         }
     },
+    "mounts": [
+        "source=${localEnv:HOME}/.cache,target=/root/.cache,type=bind,consistency=cached"
+    ],
     "postCreateCommand": "bash .devcontainer/scripts/post_create.sh",
     "postStartCommand": "bash .devcontainer/scripts/post_start.sh"
 }
