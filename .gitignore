@@ -1,2 +1,5 @@
 runs/*
 mlruns/*
+*/__pycache__/*
+.dolt/*
+.dolt_dropped_databases/*
