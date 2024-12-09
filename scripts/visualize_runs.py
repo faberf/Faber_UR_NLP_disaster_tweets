@@ -17,8 +17,27 @@ DB_PASSWORD = ""
 DB_NAME = "Faber_UR_NLP_disaster_tweets"
 
 RUN_IDS = [
-    "1a0b86fc-f640-4731-a369-a914e77cb2aa",
-    "34e209e0-9400-412c-9888-67cbaa5373b4"
+"1a0b86fc-f640-4731-a369-a914e77cb2aa",
+
+"34e209e0-9400-412c-9888-67cbaa5373b4",
+
+# "fc56b749-c65f-4ccc-bf2c-4d9973134dc1",
+# "431be427-8e2a-49e4-a9c6-2e062ec410a4",
+
+# "e78563b9-f520-4dca-8c70-9f745dfab6be",
+# "4dee62ac-28f7-4bc4-9fcc-8055bdec38fa",
+# "609037d2-3714-484e-986a-d668d5262451",
+# "3a3a867e-ac06-4cbb-b8eb-acc8c7e631fb",
+
+# "b316e92e-4ce7-4680-96b9-2827150e842f",
+# "45e5e2d2-fd66-4ca1-8c1c-4637539fc113",
+# "e536f28e-3f53-4a32-a9a3-ad97491ef1ad",
+
+# "61586d66-73e1-4eec-b67f-d12a009efa42",
+# "c1d25d74-fe90-4860-bdda-4b4495ff1bfa",
+# "3f924c44-58a9-4182-9d33-55271753c2f5",
+
+"6944d9c2-db82-4c3c-8206-bc7917e96b92"
 ]
 
 metrics_to_plot = ["accuracy", "f1", "precision", "recall", "loss"]
@@ -56,14 +75,7 @@ for run_id in RUN_IDS:
         WHERE run_id = %s
     """, (run_id,))
     hparams = cursor.fetchall()
-    hparam_dict = {}
-    for hp in hparams:
-        val = hp['param_value']
-        try:
-            val = json.loads(val)
-        except:
-            pass
-        hparam_dict[hp['param_name']] = val
+    hparam_dict = {hp['param_name']: hp['param_value'] for hp in hparams if hp['param_name'] not in ["eval_every", "num_train_epochs"]}
     all_hparams[run_id] = hparam_dict
 
     # Metrics
@@ -90,12 +102,7 @@ for h in all_hparams.values():
 differing_params = []
 for param in all_param_names:
     values = [all_hparams[r].get(param, None) for r in RUN_IDS]
-    # Convert to JSON strings for comparison
-    try:
-        json_values = [json.dumps(v, sort_keys=True) for v in values]
-    except:
-        json_values = [str(v) for v in values]
-    if len(set(json_values)) > 1:
+    if len(set(values)) > 1:
         differing_params.append(param)
 
 print("Differing hyperparameters among runs:", differing_params)
@@ -128,13 +135,12 @@ out_dir = os.path.join("plots", "runs", timestamp)
 os.makedirs(out_dir, exist_ok=True)
 
 ########################################
-# First Figure: Line plots over steps
+# First Figure: Line plots
 ########################################
-fig, axes = plt.subplots(len(metrics_to_plot), 2, figsize=(12, 4*len(metrics_to_plot)), sharex=False)
+fig, axes = plt.subplots(len(metrics_to_plot), 2, figsize=(12, 4*len(metrics_to_plot)+2), sharex=False)
 if len(metrics_to_plot) == 1:
     axes = np.array([axes])  # Ensure axes is 2D
 
-# Determine unified y-limits for the line plots
 metric_phase_stats = {}
 for metric in metrics_to_plot:
     metric_phase_stats[metric] = {"train": {"min": float('inf'), "max": float('-inf')},
@@ -172,21 +178,22 @@ for i, metric in enumerate(metrics_to_plot):
         ax.set_xlabel("Step")
         ax.set_ylabel(metric)
         ax.set_ylim(metric_phase_stats[metric]["unified_min"], metric_phase_stats[metric]["unified_max"])
-        if i == 0 and j == 1:
-            ax.legend()
 
-plt.tight_layout()
+handles, labels = axes[-1, -1].get_legend_handles_labels()
+
+# Reserve space at bottom
+plt.tight_layout(rect=[0,0.15,1,1]) 
+fig.legend(handles, labels, loc='lower center', ncol=1, fontsize='small', bbox_to_anchor=(0.5, 0.05))
 plt.savefig(os.path.join(out_dir, "line_plots.png"))
 plt.close()
 
 ########################################
-# Second Figure: Bar plots for best values
+# Second Figure: Bar plots
 ########################################
-fig, axes = plt.subplots(len(metrics_to_plot), 2, figsize=(12, 4*len(metrics_to_plot)), sharex=False)
+fig, axes = plt.subplots(len(metrics_to_plot), 2, figsize=(12, 4*len(metrics_to_plot)+2), sharex=False)
 if len(metrics_to_plot) == 1:
     axes = np.array([axes])  # Ensure axes is 2D
 
-# Compute best values
 best_values = {}
 for run_id, df in all_data.items():
     best_values[run_id] = {}
@@ -202,14 +209,12 @@ for run_id, df in all_data.items():
                     val = mdf["metric_value"].max()
                 best_values[run_id][(metric, phase)] = val
 
-# Determine y-limits for bar plots
 for metric in metrics_to_plot:
     values_train = [best_values[r][(metric,"train")] for r in RUN_IDS if best_values[r][(metric,"train")] is not None]
     values_eval = [best_values[r][(metric,"eval")] for r in RUN_IDS if best_values[r][(metric,"eval")] is not None]
     all_vals = values_train + values_eval
     if len(all_vals) == 0:
         all_vals = [0, 1]
-
     min_val = min(all_vals)
     max_val = max(all_vals)
     margin = (max_val - min_val) * 0.05
@@ -220,10 +225,7 @@ for metric in metrics_to_plot:
     metric_phase_stats[metric]["bar_min"] = min_val
     metric_phase_stats[metric]["bar_max"] = max_val
 
-# Use a colormap to differentiate runs
 color_map = plt.get_cmap("tab10")
-
-# We will show legend on the top-right plot (similar to line plots)
 legend_handles = []
 legend_labels = []
 added_labels = set()
@@ -231,31 +233,24 @@ added_labels = set()
 for i, metric in enumerate(metrics_to_plot):
     for j, phase in enumerate(["train", "eval"]):
         ax = axes[i, j]
-        # Plot bars at integer positions
         for k, run_id in enumerate(RUN_IDS):
             val = best_values[run_id].get((metric, phase), None)
             if val is not None:
                 c = color_map(k)
                 bar = ax.bar(k, val, color=c)
-                # Prepare legend entries only once per run_id
                 lbl = run_labels[run_id]
                 if lbl not in added_labels:
                     legend_handles.append(bar)
                     legend_labels.append(lbl)
                     added_labels.add(lbl)
-
         ax.set_title(f"{phase.capitalize()} {metric} (Best)")
         ax.set_ylabel(metric)
         ax.set_ylim(metric_phase_stats[metric]["bar_min"], metric_phase_stats[metric]["bar_max"])
         ax.set_xticks(range(len(RUN_IDS)))
-        # No labels on the x-axis since we're using a legend
         ax.set_xticklabels(["" for _ in RUN_IDS])
 
-# Add legend to one of the axes (e.g., top-right subplot)
-# We'll just pick the top-right subplot (0, 1) for convenience
-axes[0, 1].legend(legend_handles, legend_labels, loc='best')
-
-plt.tight_layout()
+plt.tight_layout(rect=[0,0.15,1,1])
+fig.legend(legend_handles, legend_labels, loc='lower center', ncol=1, fontsize='small', bbox_to_anchor=(0.5, 0.05))
 plt.savefig(os.path.join(out_dir, "bar_plots.png"))
 plt.close()
 

@@ -12,25 +12,27 @@ default_hps = {
     "weight_decay": 0.01,
     "metric_for_best_model": "f1",
     "run_directory": "runs",
-    "eval_batch_size": 64,
-    "eval_every": 90,
+    "eval_batch_size": 128,
+    "eval_every": 150,
     "metrics_to_log": ["accuracy", "precision", "recall", "f1"],
-    "sample_limit": 10
+    "sample_limit": 10,
+    "train_tag": "original_split_train",  # Added train tag
+    "eval_tag": "original_split_eval"    # Added eval tag
 }
 
-# try larger base model
-hps = deepcopy(default_hps)
-hps["model_checkpoint"] = "sentence-transformers/all-MiniLM-L12-v2"
-train(hps)
+# # try larger base model
+# hps = deepcopy(default_hps)
+# hps["model_checkpoint"] = "sentence-transformers/all-MiniLM-L12-v2"
+# train(hps)
 
-# sweep the number of frozen layers
-for frozen_layers in range(1, 3):
-    hps = deepcopy(default_hps)
-    hps["frozen_layers"] = frozen_layers
-    train(hps)
+# # sweep the number of frozen layers
+# for frozen_layers in range(1, 3):
+#     hps = deepcopy(default_hps)
+#     hps["frozen_layers"] = frozen_layers
+#     train(hps)
 
 # sweep the hidden sizes
-for hidden_sizes in [[384], [192], [96], [192, 96]]:
+for hidden_sizes in [[192, 96]]: # [384], [192], [96], 
     hps = deepcopy(default_hps)
     hps["finetune_hidden_sizes"] = hidden_sizes
     train(hps)
